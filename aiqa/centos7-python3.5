@@ -1,0 +1,18 @@
+# 系统镜像centos7-base
+FROM pings/centos7-base
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# 安装依赖
+RUN yum install -y wget net-tools  gcc openssl-devel make
+
+# 安装python3.5.4
+WORKDIR /opt/python
+RUN wget http://mirrors.sohu.com/python/3.5.4/Python-3.5.4.tgz
+RUN tar zxvf Python-3.5.4.tgz
+WORKDIR /opt/python/Python-3.5.4
+RUN ./configure --prefix=/opt/python/Python-3.5.4 && make && make install
+ENV PYTHON_HOME=/opt/python/Python-3.5.4
+ENV PATH=$PATH:$PYTHON_HOME/bin
+RUN rm -f /opt/python/Python-3.5.4.tgz

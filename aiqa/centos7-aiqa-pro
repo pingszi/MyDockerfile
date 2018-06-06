@@ -1,0 +1,12 @@
+# 系统镜像centos7-aiqa-pro-env
+FROM pings/centos7-aiqa-pro-env
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# 添加项目
+WORKDIR /opt/project/product
+COPY AIQA AIQA
+
+# 启动
+CMD ["./start_aiqa.sh"]

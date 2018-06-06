@@ -1,0 +1,13 @@
+# 系统镜像centos7-python3.5
+FROM pings/centos7-python3.5
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# 安装依赖
+RUN yum install -y mysql-devel
+
+# 项目依赖
+WORKDIR /opt/python/
+ADD requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt

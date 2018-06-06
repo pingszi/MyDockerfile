@@ -1,0 +1,44 @@
+# 系统镜像centos7-python3.5-aiqa
+FROM pings/centos7-python3.5-aiqa
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# aiqa生产环境
+# nginx,uwsgi,redis
+
+# nginx
+# 安装
+WORKDIR /etc/yum.repos.d
+RUN echo "[nginx]" >> nginx.repo
+RUN echo "name=nginx repo" >> nginx.repo
+RUN echo "baseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/" >> nginx.repo
+RUN echo "gpgcheck=0" >> nginx.repo
+RUN echo "enabled=1" >> nginx.repo
+RUN yum -y install nginx
+# 配置
+WORKDIR /etc/nginx/conf.d
+COPY conf/nginx/aiqa.conf aiqa.conf
+COPY conf/nginx/robot.conf robot.conf
+RUN rm -f default.conf
+
+# uwsgi
+RUN pip3 install uwsgi
+WORKDIR /opt/project/product/script
+COPY conf/uwsgi/uwsgi.ini uwsgi.ini
+
+# redis
+WORKDIR /opt/project
+RUN wget http://download.redis.io/releases/redis-4.0.9.tar.gz
+RUN tar zvxf redis-4.0.9.tar.gz
+WORKDIR /opt/project/redis-4.0.9
+RUN make
+RUN rm -f /opt/projectredis-4.0.9.tar.gz
+
+# 启动脚本
+WORKDIR /opt/project/product
+COPY conf/start_aiqa.sh start_aiqa.sh
+
+# 开放端口
+EXPOSE 8001
+EXPOSE 80
