@@ -9,5 +9,5 @@ RUN yum install -y mysql-devel
 
 # 项目依赖
 WORKDIR /opt/python/
-ADD requirements.txt requirements.txt
+ADD conf/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
