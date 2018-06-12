@@ -13,3 +13,6 @@ uwsgi≈‰÷√:
 /opt/project/product/script
 nginx≈‰÷√£∫
 /etc/nginx/conf.d
+
+mysqlæµœÒ
+mysql_aiqa
