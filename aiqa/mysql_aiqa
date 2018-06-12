@@ -1,0 +1,15 @@
+# 系统镜像mysql:5.7
+FROM mysql:5.7
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# 初始化脚本
+COPY conf/mysql/my.cnf /etc/mysql/conf.d/my.cnf
+RUN chmod 644 /etc/mysql/conf.d/my.cnf
+COPY conf/mysql/aiqa.sql /mysql/aiqa.sql
+COPY conf/mysql/privileges.sql /mysql/privileges.sql
+COPY conf/start_mysql.sh /mysql/start_mysql.sh
+
+# 启动
+CMD ["/mysql/start_mysql.sh"]
