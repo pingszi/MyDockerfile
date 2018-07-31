@@ -7,3 +7,6 @@ MAINTAINER Pings 275598139@qq.com
 # 修改配置
 COPY conf/mysql/my.cnf /etc/mysql/conf.d/my.cnf
 RUN chmod 644 /etc/mysql/conf.d/my.cnf
+
+# 设置时区
+RUN ln -s -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime

@@ -1,6 +1,5 @@
 # 系统镜像centos7-python3.5-aiqa
-FROM pings/centos7-python3.5-aiqa
-
+FROM registry.cn-hangzhou.aliyuncs.com/pings/centos7-python3.5-aiqa
 # 维护者
 MAINTAINER Pings 275598139@qq.com
 
@@ -20,6 +19,8 @@ RUN yum -y install nginx
 WORKDIR /etc/nginx/conf.d
 COPY conf/nginx/aiqa.conf aiqa.conf
 COPY conf/nginx/robot.conf robot.conf
+# 替换nginx.conf
+COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
 RUN rm -f default.conf
 
 # uwsgi
@@ -42,3 +43,7 @@ COPY conf/start_aiqa.sh start_aiqa.sh
 # 开放端口
 EXPOSE 8001
 EXPOSE 80
+
+# 启动
+COPY AIQA AIQA
+CMD ["./start_aiqa.sh"]
