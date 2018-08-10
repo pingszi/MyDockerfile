@@ -1,0 +1,43 @@
+# 系统镜像CentOS7
+FROM daocloud.io/centos:latest
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# 环境变量
+ENV LANG en_US.UTF-8
+# 设置时区
+RUN ln -s -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+# 安装依赖
+RUN yum install -y wget net-tools
+
+# 安装JDK
+RUN mkdir -p /opt/java/jdk
+RUN wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie"  -P /opt/java/jdk http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.tar.gz
+RUN tar xzf /opt/java/jdk/jdk-8u181-linux-x64.tar.gz -C /opt/java/jdk && rm -rf /opt/java/jdk/jdk-8u181-linux-x64.tar.gz
+
+# 安装tomcat
+RUN mkdir -p /opt/java/tomcat
+RUN wget -P /opt/java/tomcat http://archive.apache.org/dist/tomcat/tomcat-8/v8.5.8/bin/apache-tomcat-8.5.8.tar.gz
+RUN tar xzf /opt/java/tomcat/apache-tomcat-8.5.8.tar.gz -C /opt/java/tomcat && rm -rf /opt/java/tomcat/apache-tomcat-8.5.8.tar.gz
+
+# 设置环境变量
+ENV JAVA_HOME /opt/java/jdk/jdk1.8.0_181
+ENV CATALINA_HOME /opt/java/tomcat/apache-tomcat-8.5.8
+ENV PATH $PATH:$JAVA_HOME/bin:$CATALINA_HOME/bin
+
+# 下载jenkins并部署到tomcat
+RUN mkdir -p /opt/java/jenkins
+RUN wget -P /opt/java/jenkins http://mirrors.jenkins.io/war/latest/jenkins.war
+RUN cp /opt/java/jenkins/jenkins.war /opt/java/tomcat/apache-tomcat-8.5.8/webapps/
+
+# 开启8080端口
+EXPOSE 8080
+
+# 启动tomcat服务器
+CMD ["./opt/java/tomcat/apache-tomcat-8.5.8/bin/catalina.sh", "run"] && tail -f /opt/java/tomcat/apache-tomcat-8.5.8/logs/catalina.out 
+
+# 运行命令
+# docker build -t pings/jenkins -f jenkins .
+# docker run -p 8080:8080 --name jenkins imageId

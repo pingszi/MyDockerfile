@@ -34,7 +34,7 @@ RUN wget http://download.redis.io/releases/redis-4.0.9.tar.gz
 RUN tar zvxf redis-4.0.9.tar.gz
 WORKDIR /opt/project/redis-4.0.9
 RUN make
-RUN rm -f /opt/projectredis-4.0.9.tar.gz
+RUN rm -f /opt/project/redis-4.0.9.tar.gz
 
 # 启动脚本
 WORKDIR /opt/project/product
