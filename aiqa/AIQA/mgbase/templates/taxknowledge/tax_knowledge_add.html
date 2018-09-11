@@ -1,0 +1,205 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% load xadmin_tags %}
+{% load crispy_forms_tags %}
+
+{% block nav_title %}{% if model_icon %}<i class="{{model_icon}}"><sub class="fa fa-{% if add%}plus{%else%}pencil{%endif%}"></sub></i> {% endif %}
+{{ title }}{% endblock %}
+
+{% block content %}
+<form class="exform" {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form">{% csrf_token %}
+    {% block form_top %}{% endblock %}
+    {% view_block 'form_top' %}
+
+    {% if errors %}
+    <div class="alert alert-danger alert-dismissable">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {% blocktrans count counter=errors|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+    </div>
+    {{ form.non_field_errors }}
+    {% endif %}
+
+    {% view_block 'before_fieldsets' %}
+
+    {% crispy form %}
+
+    {% view_block 'after_fieldsets' %}
+
+    <!-- 扩展问题 -->
+    <div class="panel panel-default formset fieldset  stacked" id="extendQuestionHeaderGroup">
+        <div class="panel-heading"><i class="icon fa fa-chevron-up chevron"></i>
+            <h3 class="panel-title">
+                <a class="add-row" id="addExtendQuestionHeaderButton"><i class="icon fa fa-plus"></i></a>扩展问题
+            </h3>
+        </div>
+    </div>
+    <!-- 扩展问题 -->
+
+    <div class="form-actions well well-sm clearfix">
+        <button type="submit" class="default btn btn-primary hide-xs" name="_save" data-loading-text="{% trans "Saving.." %}"/><i class="fa fa-save"></i> {% trans 'Save' %}</button>
+    </div>
+
+    <!-- 输入问题后显示相关的问题(Modal) -->
+    <div class="modal fade" id="relativeQuestionModal" tabindex="-1" role="dialog" aria-labelledby="relativeQuestionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="relativeQuestionModalLabel">是否存在相关问题？</h4>
+                </div>
+                <div class="modal-body" id="relativeQuestionContent"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">是</button>
+                    <button type="button" class="btn btn-primary" id="relativeQuestion_no">否</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 输入问题后显示相关的问题(Modal) -->
+
+</form>
+<script src="/static/common/js/common.js"></script>
+<script>
+    //**扩展问题编号
+    p_extendQuestionHeaderNo = 1;
+    //**扩展问题可用标记
+    p_flag = false;
+
+    $(document).ready(function(){
+        init();
+    });
+
+    //**页面初始化
+    function init(){
+        //**数据验证
+        $("#taxknowledge_form").submit(function() {
+            let isNotNull = true;
+            $(this).find("input").not(":hidden").map(function(){
+                let value = !!$(this).val();
+
+                if(isNotNull || !value) $(this).focus();
+                //**关键字不能包含空格
+                if($(this).attr("name").startsWith("keyword_")){
+                    if(!(/^\S*$/.test($(this).val()))){
+                        value = false;
+                        alert("关键字不能包含空格!");
+                        $(this).focus();
+                    }
+                }
+
+                isNotNull = isNotNull && value
+            });
+            return isNotNull;
+        });
+        //**输入问题后验证是否重复
+        $("input[name=sd_question]").change(validateKnowledgeRepeat);
+        //**点击不否存在相关问题
+        $("#relativeQuestion_no").click(extendQuestionHeader);
+        //**添加扩展问题按钮
+        $("#addExtendQuestionHeaderButton").click(() => p_flag ? addExtendQuestionHeader(++p_extendQuestionHeaderNo) : alert("请输入新的问题！"));
+    }
+
+    //**验证知识是否重复
+    function validateKnowledgeRepeat(){
+        let question = $("input[name=sd_question]").val();
+        if(!question) return;
+
+        //**删除空格
+        question = question.replace(/\s/g, "");
+        $("input[name=sd_question]").val(question);
+
+        //**验证知识是否重复
+        Util.get(`/mgbase/validate_knowledge_repeat?question=${question}`).then(rst => {
+            //**显示相关问题
+            if(rst.token){
+                let relativeQuestionList = rst.content.relativeQuestionList;
+                let li = relativeQuestionList.map(relativeQuestion => `<li class="list-group-item">${relativeQuestion.question}</li>`).join("");
+                let ul = `<ul class="list-group">${li}</ul>`;
+                $("#relativeQuestionContent").html(ul);
+
+                $('#relativeQuestionModal').modal("show");
+            } else
+                extendQuestionHeader()
+        })
+    }
+
+    //**扩展问题.
+    function extendQuestionHeader() {
+        //**隐藏相关的问题(Modal)
+        $('#relativeQuestionModal').modal("hide");
+        //**禁用问题输入框
+        //$("input[name=sd_question]").attr("readonly", true);
+        //**扩展问题可用标记
+        p_flag = true;
+
+        //**分词
+        let question  = $("input[name=sd_question]").val();
+        let panel = addExtendQuestionHeader(1, question, true);
+        panel.find("input[name=desc]").change();
+    }
+
+    //**添加扩展问题
+    function addExtendQuestionHeader(headerNo, desc = "", isFirst = false){
+        let del = `<button type="button" class="close">&times;</button>`;
+        let panel = `
+            <div class="panel-body stacked formset-content panel-group" data-style="stacked">
+                <div class="panel panel-default formset fieldset stacked">
+                    <div class="panel-heading">
+                        <!--<i class="icon fa fa-chevron-up chevron"></i>-->
+                        <h3 class="panel-title form-inline">
+                            <label for="extendQuestionDesc_${headerNo}" class="control-label requiredField">问题描述${headerNo}<span class="asteriskField">*</span></label>
+                            <input type="hidden" name="questionIndex" value="${headerNo}"/>
+                            <input name="desc" id="extendQuestionDesc_${headerNo}" value="${desc}" class="text-field form-control input-sm" placeholder="请输入扩展问题描述......"/>
+                            <a class="add-row"><i class="icon fa fa-plus"></i></a>
+                            ${headerNo === 1 ? "" : del}
+                        </h3>
+                    </div>
+                    <div class="panel-body stacked formset-content panel-group" data-style="stacked">
+                        <ul class="list-group"></ul>
+                    </div>
+                </div>
+            </div>
+        `;
+        panel = panel.trim();
+        panel = $(panel);
+
+        //**添加按钮，添加扩展问题明细
+        let no = 0;
+        let ul = panel.find("ul");
+        panel.find("a[class=add-row]").click(() => addExtendQuestion(ul, headerNo, ++no));
+        //**删除按钮，删除扩展问题
+        panel.find("button[class=close]").click(() => panel.remove());
+        //**扩展问题描述失去焦点事件，对扩展问题描述进行分词
+        panel.find("input[name=desc]").change(function(){
+            //**清空扩展问题明细
+            ul.empty();
+
+            Util.get(`/mgbase/split_knowledge?question=${$(this).val()}`).then(rst => rst.map(keyword => addExtendQuestion(ul, headerNo, ++no, keyword.keyword)));
+        });
+        //**添加扩展问题
+        let group = $("#extendQuestionHeaderGroup");
+        (isFirst && group.find("div:eq(1)").length) ? group.find("div:eq(1)").replaceWith(panel) : group.append(panel);
+
+        return panel;
+    }
+
+    //**添加扩展问题明细
+    function addExtendQuestion(extendQuestionUl, headerNo, no, keyword = ""){
+        let div = `
+            <li class="list-group-item form-inline">
+                <label class="control-label requiredField">关键字${no}<span class="asteriskField">*</span></label>
+                <input name="keyword_${headerNo}" value="${keyword}" class="text-field form-control input-sm" placeholder="请输入关键字......"/>
+                <button type="button" class="close">&times;</button>
+            </li>
+        `;
+        div = div.trim();
+        div = $(div);
+
+        //**删除按钮，删除扩展问题明细
+        div.find("button[class=close]").click(() => div.remove());
+        //**添加扩展问题明细
+        extendQuestionUl.append(div);
+    }
+</script>
+{% endblock %}

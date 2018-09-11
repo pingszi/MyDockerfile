@@ -11,3 +11,7 @@ RUN yum install -y mysql-devel
 WORKDIR /opt/python/
 ADD conf/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
+
+# DjangoUeditor3
+RUN yum -y install git
+RUN pip3 install git+git://github.com/twz915/DjangoUeditor3.git

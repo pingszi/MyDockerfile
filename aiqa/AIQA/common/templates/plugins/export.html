@@ -1,0 +1,23 @@
+<div class='btn-group'>
+    <button type='button' class='btn btn-default btn-sm layout-full' data-toggle="modal" data-target="#exportSelect">{{value}}</button>
+
+    <!-- 上传的选择框(Modal) -->
+    <div class="modal fade" id="exportSelect" tabindex="-1" role="dialog" aria-labelledby="exportLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="exportLabel">下载模板</h4>
+                </div>
+                <div class="modal-body" id="exportContent">
+                    <h5>下载模板选择:</h5>    
+                    <button type='button' class='btn btn-info btn-sm layout-full' onclick="customExportClick({{name}},0)">模板</button>
+                    <label>&nbsp;</label> 
+                    <button type='button' class='btn btn-info btn-sm layout-full' onclick="customExportClick({{name}},1)">分类同义词模板</button>    
+                </div>
+                <div class="modal-footer"></div>
+            </div>
+        </div>
+    </div>
+
+</div>

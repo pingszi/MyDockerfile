@@ -1,0 +1,206 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% load xadmin_tags %}
+{% load crispy_forms_tags %}
+
+{% block nav_title %}{% if model_icon %}<i class="{{model_icon}}"><sub class="fa fa-{% if add%}plus{%else%}pencil{%endif%}"></sub></i> {% endif %}
+{{ title }}{% endblock %}
+
+{% block content %}
+<form class="exform" {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form">{% csrf_token %}
+    {% block form_top %}{% endblock %}
+    {% view_block 'form_top' %}
+
+    {% if errors %}
+    <div class="alert alert-danger alert-dismissable">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {% blocktrans count counter=errors|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+    </div>
+    {{ form.non_field_errors }}
+    {% endif %}
+
+    {% view_block 'before_fieldsets' %}
+
+    {% crispy form %}
+
+    {% view_block 'after_fieldsets' %}
+
+    <!-- 扩展问题 -->
+    <div class="panel panel-default formset fieldset  stacked" id="extendQuestionHeaderGroup">
+        <div class="panel-heading"><i class="icon fa fa-chevron-up chevron"></i>
+            <h3 class="panel-title">
+                <a class="add-row" id="addExtendQuestionHeaderButton"><i class="icon fa fa-plus"></i></a>扩展问题
+            </h3>
+        </div>
+    </div>
+    <!-- 扩展问题 -->
+
+    <div class="form-actions well well-sm clearfix">
+        <button type="submit" class="default btn btn-primary hide-xs" name="_save" data-loading-text="{% trans "Saving.." %}"/><i class="fa fa-save"></i> {% trans 'Save' %}</button>
+    </div>
+
+</form>
+<script src="/static/common/js/common.js"></script>
+<script>
+    //**扩展问题编号
+    p_extendQuestionHeaderNo = 0;
+    //**扩展问题可用标记
+    p_flag = false;
+
+    $(document).ready(function(){
+        init();
+    });
+
+    //**页面初始化
+    function init(){
+        //**数据验证
+        $("#taxknowledge_form").submit(function() {
+            let isNotNull = true;
+            $(this).find("input").not(":hidden").map(function(){
+                let value = !!$(this).val();
+
+                if(isNotNull || !value) $(this).focus();
+                //**关键字不能包含空格
+                if($(this).attr("name").startsWith("keyword_")){
+                    if(!(/^\S*$/.test($(this).val()))){
+                        value = false;
+                        alert("关键字不能包含空格!");
+                        $(this).focus();
+                    }
+                }
+
+                isNotNull = isNotNull && value
+            });
+            return isNotNull;
+        });
+        //**禁用问题输入框
+        //$("input[name=sd_question]").attr("readonly", true);
+        //**添加扩展问题按钮
+        $("#addExtendQuestionHeaderButton").click(() => p_flag ? addExtendQuestionHeader(++p_extendQuestionHeaderNo) : alert("请输入新的问题！"));
+        //**初始化扩展问题
+        extendQuestionHeader();
+    }
+
+    //**扩展问题
+    function extendQuestionHeader() {
+        //**扩展问题可用标记
+        p_flag = true;
+
+        //**从request的路径中截取知识的id，查询扩展问题
+        let paths = "{{request.path}}".split("/");
+        let index = paths.findIndex(value => value === "taxknowledge");
+        let knowledgeId = paths[index + 1];
+
+        Util.get(`/mgbase/get_knowledge/${knowledgeId}`).then(rst => {
+            rst.list.forEach(extendQuestionHeader => {
+                addExtendQuestionHeader(++p_extendQuestionHeaderNo, extendQuestionHeader, extendQuestionHeader.extend_question_list);
+            });
+        });
+    }
+
+    //**添加扩展问题
+    function addExtendQuestionHeader(headerNo, extendQuestionHeader, extendQuestionList = null){
+        extendQuestionHeader = extendQuestionHeader || {id: "", desc: ""};
+
+        let del = `<button type="button" class="close">&times;</button>`;
+        let panel = `
+            <div class="panel-body stacked formset-content panel-group" data-style="stacked">
+                <div class="panel panel-default formset fieldset stacked">
+                    <div class="panel-heading">
+                        <!--<i class="icon fa fa-chevron-up chevron"></i>-->
+                        <h3 class="panel-title form-inline">
+                            <label for="extendQuestionDesc_${headerNo}" class="control-label requiredField">问题描述${headerNo}<span class="asteriskField">*</span></label>
+                            <input type="hidden" name="extendQuestionHeaderId" value="${extendQuestionHeader.id}"/>
+                            <input type="hidden" name="questionIndex" value="${headerNo}"/>
+                            <input name="desc" id="extendQuestionDesc_${headerNo}" value="${extendQuestionHeader.desc}" class="text-field form-control input-sm" placeholder="请输入扩展问题描述......"/>
+                            <a class="add-row"><i class="icon fa fa-plus"></i></a>
+                            ${headerNo === 1 ? "" : del}
+                        </h3>
+                    </div>
+                    <div class="panel-body stacked formset-content panel-group" data-style="stacked">
+                        <table class="table">
+                            <thead>
+                              <tr>
+                                 <th>关键字<span class="asteriskField">*</span></th><th>tf</th><th>idf</th><th>局部放大倍数<span class="asteriskField">*</span></th><th>权重</th><th>操作</th>
+                              </tr>
+                           </thead>
+                           <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        panel = panel.trim();
+        panel = $(panel);
+
+        //**添加按钮，添加扩展问题明细
+        let no = 0;
+        let tbody = panel.find("tbody");
+        panel.find("a[class=add-row]").click(() => addExtendQuestion(tbody, headerNo, ++no));
+        //**删除按钮，删除扩展问题
+        panel.find("button[class=close]").click(() => panel.remove());
+        //**扩展问题描述失去焦点事件，对扩展问题描述进行分词
+        panel.find("input[name=desc]").change(function(){
+            //**清空扩展问题明细
+            tbody.empty();
+
+            Util.get(`/mgbase/split_knowledge?question=${$(this).val()}`).then(rst => rst.map(keyword => {
+                let extendQuestion = {id: "", keyword: keyword.keyword, tf_value: 0, idf_value: 0, amplification: 1, weighted_value: 0};
+                return addExtendQuestion(tbody, headerNo, ++no, extendQuestion)
+            }));
+        });
+
+        //**显示扩展问题明细
+        if(extendQuestionList){
+            extendQuestionList.forEach(extendQuestion => addExtendQuestion(tbody, headerNo, ++no, extendQuestion));
+        }
+
+        //**添加扩展问题
+        $("#extendQuestionHeaderGroup").append(panel);
+
+        return panel;
+    }
+
+    //**添加扩展问题明细
+    function addExtendQuestion(extendQuestionTbody, headerNo, no, extendQuestion){
+        extendQuestion = extendQuestion || {id: "", keyword: "", tf_value: 0, idf_value: 0, amplification: 1, weighted_value: 0};
+
+        let div = `
+            <tr>
+                <td>
+                    <input type="hidden" name="extendQuestionId_${headerNo}" value="${extendQuestion.id}"/>
+                    <input name="keyword_${headerNo}" value="${extendQuestion.keyword}" class="text-field form-control input-sm" placeholder="请输入关键字......"/>
+                </td>
+                <td>${extendQuestion.tf_value}</td>
+                <td>${extendQuestion.idf_value}</td>
+                <td><input type="number" min="0.0" step="0.05" name="amplification_${headerNo}" value="${extendQuestion.amplification}" class="numberinput form-control input-sm" placeholder="请输入放大倍数......"/></td>
+                <td>
+                    <input type="hidden" name="weighted_${headerNo}" value="${extendQuestion.weighted_value}"/>
+                    <span>${extendQuestion.weighted_value}</span>
+                </td>
+                <td><button type="button" class="close">&times;</button></td>
+            </tr>
+        `;
+        div = div.trim();
+        div = $(div);
+
+        //**删除按钮，删除扩展问题明细
+        div.find("button[class=close]").click(() => div.remove());
+        //**放大倍数改变事件，重新计算权重
+        div.find("input[type=number]").change(() => {
+            let id = extendQuestion.id;
+            let amplification =  div.find("input[type=number]").val();
+            if(!id || !amplification) return;
+
+            Util.get(`/mgbase/get_weighted_value/${id}/${amplification}`).then(rst => {
+                let td = div.find("td:eq(4)");
+                td.find("input").val(rst.weighted_value);
+                td.find("span").html(rst.weighted_value);
+            });
+        });
+        //**添加扩展问题明细
+        extendQuestionTbody.append(div);
+    }
+</script>
+{% endblock %}

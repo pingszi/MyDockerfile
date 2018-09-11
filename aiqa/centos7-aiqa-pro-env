@@ -6,6 +6,12 @@ MAINTAINER Pings 275598139@qq.com
 # aiqa生产环境
 # nginx,uwsgi,redis
 
+#新增加的组件
+WORKDIR /opt/project/product/AIQA
+RUN pip3 install zmail
+RUN yum -y install git
+RUN pip3 install git+git://github.com/twz915/DjangoUeditor3.git
+
 # nginx
 # 安装
 WORKDIR /etc/yum.repos.d
@@ -44,6 +50,4 @@ COPY conf/start_aiqa.sh start_aiqa.sh
 EXPOSE 8001
 EXPOSE 80
 
-# 启动
-COPY AIQA AIQA
-CMD ["./start_aiqa.sh"]
+#docker build -t pings/centos7-aiqa-pro-env -f centos7-aiqa-pro-env .

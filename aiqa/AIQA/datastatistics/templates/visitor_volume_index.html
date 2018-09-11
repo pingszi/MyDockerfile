@@ -1,0 +1,83 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% load xadmin_tags %}
+
+{% block extrastyle %}
+<style type="text/css">
+    .btn-toolbar{margin-top: 0;}
+    #content-block.full-content{margin-left: 0;}
+</style>
+{% endblock %}
+{% block bodyclass %}change-list{% endblock %}
+
+{% block nav_title %}{% if brand_icon %}<i class="{{brand_icon}}"></i> {% endif %}{{brand_name}}{% endblock %}
+
+{% block nav_toggles %}
+{% include "xadmin/includes/toggle_menu.html" %}
+{% endblock %}
+
+{% block nav_btns %}
+
+{% endblock nav_btns %}
+
+{% block content %}
+<div class="container">
+    <div class="row clearfix">
+        <div class="col-md-6 column">
+            <div id="7_day" style="width: 100%;height: 260px"></div>
+        </div>
+        <div class="col-md-6 column">
+            <div id="4_week" style="width: 100%;height: 260px"></div>
+        </div>
+    </div>
+    <div class="row clearfix">
+        <div class="col-md-6 column">
+            <div id="12_month" style="width: 100%;height: 260px"></div>
+        </div>
+        <div class="col-md-6 column">
+            <div id="total" style="width: 100%;height: 260px;margin-top: 130px" class="text-center">
+                历史总访问量：<span id="total_qty"></span>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/static/echarts/echarts.min.js"></script>
+<script src="/static/common/js/common.js"></script>
+<script src="/static/common/js/base_chart.js"></script>
+<script>
+    $(document).ready(function(){
+        init();
+    });
+
+    //**初始化
+    function init() {
+        let params = {};
+        params.fields = "date_format(add_time, '%Y-%m-%d') name,count(*) value";
+        params.table = "tax_question_session";
+        params.where = "add_time >= date_add(curdate(), interval -6 day)";
+        params.group = "date_format(add_time, '%Y-%m-%d')";
+        params.order = "date_format(add_time, '%Y-%m-%d')";
+        new BaseBar("7_day", params, "最近7天访问量").show();
+
+        params.fields = "concat('第', weekofyear(add_time), '周') name,count(*) value";
+        params.table = "tax_question_session";
+        params.where = "add_time >= subdate(date_add(curdate(), interval -3 week), weekday(date_add(curdate(), interval -3 week)))";
+        params.group = "concat('第', weekofyear(add_time), '周')";
+        params.order = "concat('第', weekofyear(add_time), '周')";
+        new BaseBar("4_week", params, "最近一月访问量").show();
+
+        params.fields = "concat(month(add_time), '月') name,count(*) value";
+        params.table = "tax_question_session";
+        params.where = "add_time >= concat(date_format(date_add(curdate(), interval -11 month), '%Y-%m'), '-01')";
+        params.group = "concat(month(add_time), '月')";
+        params.order = "concat(month(add_time), '月')";
+        new BaseBar("12_month", params, "最近一年访问量").show();
+
+        params = {}
+        params.fields = "count(*) value";
+        params.table = "tax_question_session";
+        Util.getData(params).then(json =>  $("#total_qty").text(json[0].value));
+    }
+</script>
+{% endblock %}

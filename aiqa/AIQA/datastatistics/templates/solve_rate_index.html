@@ -1,0 +1,82 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% load xadmin_tags %}
+
+{% block extrastyle %}
+<style type="text/css">
+    .btn-toolbar{margin-top: 0;}
+    #content-block.full-content{margin-left: 0;}
+</style>
+{% endblock %}
+{% block bodyclass %}change-list{% endblock %}
+
+{% block nav_title %}{% if brand_icon %}<i class="{{brand_icon}}"></i> {% endif %}{{brand_name}}{% endblock %}
+
+{% block nav_toggles %}
+{% include "xadmin/includes/toggle_menu.html" %}
+{% endblock %}
+
+{% block nav_btns %}
+
+{% endblock nav_btns %}
+
+{% block content %}
+<div class="container">
+    <div class="row clearfix">
+        <div class="col-md-6 column">
+            <h6 style="text-align: center">今天解决率</h1>
+            <div id="1_day" style="width: 100%;height: 260px"></div>
+        </div>
+        <div class="col-md-6 column">
+            <h6 style="text-align: center">本周解决率</h1>
+            <div id="1_week" style="width: 100%;height: 260px"></div>
+        </div>
+    </div>
+    <div class="row clearfix">
+        <div class="col-md-6 column">
+            <h6 style="text-align: center">本月解决率</h1>
+            <div id="1_month" style="width: 100%;height: 260px"></div>
+        </div>
+        <div class="col-md-6 column">
+            <h6 style="text-align: center">历史解决率</h1>
+            <div id="all_month" style="width: 100%;height: 260px"></div>
+        </div>
+    </div>
+</div>
+<script src="/static/echarts/echarts.min.js"></script>
+<script src="/static/common/js/common.js"></script>
+<script src="/static/common/js/base_chart.js"></script>
+<script>
+    $(document).ready(function(){
+        init();
+    });
+
+    //**初始化
+    function init() {
+        let params = {};
+        params.fields = "DISTINCT(CASE WHEN solve = 1 THEN '已解决' WHEN solve = 2 THEN '未解决' ELSE '其他' END ) name,COUNT(*) value";
+        params.table = "tax_solve_unsolve";
+        params.where = "to_days(add_time) = to_days(now())";
+        params.group = "solve";
+        new BasePie("1_day", params, "今天解决率").show();
+
+        params.fields = "DISTINCT(CASE WHEN solve = 1 THEN '已解决' WHEN solve = 2 THEN '未解决' ELSE '其他' END ) name,COUNT(*) value";
+        params.table = "tax_solve_unsolve";
+        params.where = "DATE_SUB(CURDATE(), INTERVAL 7 DAY) <= date(add_time)";
+        params.group = "solve";
+        new BasePie("1_week", params, "本周解决率").show();
+
+        params.fields = "DISTINCT(CASE WHEN solve = 1 THEN '已解决' WHEN solve = 2 THEN '未解决' ELSE '其他' END ) name,COUNT(*) value";
+        params.table = "tax_solve_unsolve";
+        params.where = "DATE_SUB(CURDATE(), INTERVAL 30 DAY) <= date(add_time)";
+        params.group = "solve";
+        new BasePie("1_month", params, "本月解决率").show();
+
+        params.fields = "DISTINCT(CASE WHEN solve = 1 THEN '已解决' WHEN solve = 2 THEN '未解决' ELSE '其他' END ) name,COUNT(*) value";
+        params.table = "tax_solve_unsolve";
+        params.group = "solve";
+        new BasePie("all_month", params, "历史解决率").show();
+    }
+</script>
+{% endblock %}

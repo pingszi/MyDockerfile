@@ -1,0 +1,60 @@
+<div class='btn-group'>
+    <button type='button' class='btn btn-default btn-sm layout-full' data-toggle="modal" data-target="#uploadSelect">{{value}}</button>
+
+    <!-- 上传的选择框(Modal) -->
+    <div class="modal fade" id="uploadSelect" tabindex="-1" role="dialog" aria-labelledby="uploadLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="uploadLabel">导入</h4>
+                </div>
+                <div class="modal-body" id="uploadContent">
+                    <h5>选择分类模板:</h5>    
+                    <button type='button' class='btn btn-info btn-sm layout-full' onclick="selectType(0)"  data-toggle="modal" data-target="#upload">模板</button>
+                    <label>&nbsp;</label> 
+                    <button type='button' class='btn btn-info btn-sm layout-full' onclick="selectType(1)"  data-toggle="modal" data-target="#upload">分类同义词模板</button>    
+                </div>
+                <div class="modal-footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上传的表单(Modal) -->
+    <div class="modal fade" id="upload" tabindex="-1" role="dialog" aria-labelledby="uploadLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="uploadTitleLabel">上传</h4>
+                </div>
+                <div class="modal-body" id="uploadContent">
+                    <form action="{{url}}" role="form">
+                        <div class="form-group">
+                            <label class="sr-only" for="inputfile">导入</label>
+		                    <input type="file" id="inputfile">
+                        </div>                      
+                    </form>           
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="customUploadClick({{url}})">是</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">否</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示框(Modal) -->
+    <div class="modal fade" id="uploadAlert" tabindex="-1" role="dialog" aria-labelledby="uploadLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body" id="uploadAlertContent">
+                    <form action="{{url}}" role="form">
+                        <p>正在上传，请等待......</p>
+                    </form>           
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

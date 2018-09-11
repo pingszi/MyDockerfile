@@ -1,0 +1,142 @@
+{% extends base_template %}
+{% load i18n %}
+
+{% load xadmin_tags %}
+
+{% block extrastyle %}
+<style type="text/css">
+  .btn-toolbar{margin-top: 0;}
+  #content-block.full-content{margin-left: 0;}
+</style>
+{% endblock %}
+{% block bodyclass %}change-list{% endblock %}
+
+{% block nav_title %}{% if brand_icon %}<i class="{{brand_icon}}"></i> {% endif %}{{brand_name}}{% endblock %}
+
+{% block nav_toggles %}
+{% include "xadmin/includes/toggle_menu.html" %}
+{% if has_add_permission %}
+  <a href="{{add_url}}" class="navbar-toggle pull-right"><i class="fa fa-plus"></i></a>
+{% endif %}
+<button class="navbar-toggle pull-right" data-toggle="collapse" data-target=".content-navbar .navbar-collapse">
+  <i class="fa fa-filter"></i>
+</button>
+{% endblock %}
+
+{% block nav_btns %}
+  {% if has_add_permission %}
+    <a href="{{add_url}}" class="btn btn-primary"><i class="fa fa-plus"></i>
+    {% blocktrans with cl.opts.verbose_name as name %}Add {{ name }}{% endblocktrans %}</a>
+  {% endif %}
+{% endblock nav_btns %}
+
+{% block content %}
+  <div class="content-toolbar btn-toolbar pull-right clearfix">
+    {% view_block 'top_toolbar' %}
+    {% block toolbar_fullscreen %}
+    <div class="btn-group layout-btns" data-toggle="buttons-checkbox">
+      <button type="button" class="btn btn-default btn-sm layout-full"><i class="fa fa-expand"></i></button>
+      {% view_block 'top_check_btns' %}
+    </div>
+    {% endblock toolbar_fullscreen %}
+    {% view_block 'top_btns' %}
+  </div>
+
+  
+  <form id="changelist-form" action="" method="post">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th>编号</th><th>问题</th><th>扩展问题</th><th>相似度</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="list_knowledge_tbody"></tbody>
+    </table>
+  </form>
+
+<script src="/static/common/js/common.js"></script>
+<script>
+    $(document).ready(function(){
+        init();
+    });
+    
+    //**初始化
+    function init() {
+        //**插入自定义搜索框
+        $("#content-block div[class='navbar-collapse collapse'] ul:eq(0)").after(`
+              <form class="navbar-form navbar-left">
+                  <div class="input-group search-group">
+                      <input id="searchbar" class="form-control" placeholder="搜索 专家调整">
+                      <span class="input-group-btn"><button class="btn btn-primary" type="button" id="search_button"><i class="fa fa-search"></i></button></span>
+                  </div>
+              </form>
+        `);
+
+        //**搜索按钮
+        $("#search_button").click(() => {
+            let question = $("#searchbar").val().replace(/\s/g, "");
+            listKnowledge(question);
+        })
+    }
+
+    //**根据问题获取匹配的知识
+    function listKnowledge(question){
+        if(!question) {
+            alert("请输入问题");
+            return;
+        }
+
+        Util.get(`/mgbase/list_knowledge?question=${question}`).then(rst => {
+            $("#list_knowledge_tbody").empty();
+
+            //**标记为0，则没有相关问题
+            if(!rst.token) return;
+
+            let question = rst.content.question;
+            let relativeQuestionList = rst.content.relativeQuestionList;
+            relativeQuestionList.forEach(relativeQuestion => {
+                //**关键字
+                let extendQuestion = relativeQuestion.extend_question;
+                let extendQuestionStr = Object.keys(extendQuestion).map(extend => {
+                    let str = `[${extend}: ${extendQuestion[extend]}]`;
+
+                    //**匹配的关键字显示红色
+                    if(relativeQuestion.match_keywords.includes(extend))
+                        str = `<span style="color: red">${str}</span>`;
+
+                    return str;
+                }).join("");
+
+                let tr = `
+                    <tr>
+                         <td>${relativeQuestion.id}</td>
+                         <td>${relativeQuestion.question}</td>
+                         <td>${extendQuestionStr}</td>
+                         <td>${relativeQuestion.best_point}</td>
+                         <td>
+                            <div class="btn-group btn-group-xs">
+                                <button type="button" class="btn btn-success">奖励</button>
+                                <button type="button" class="btn btn-danger">惩罚</button>
+                             </div>
+                         </td>
+                     </tr>
+                `;
+                tr = tr.trim();
+                tr = $(tr);
+
+                //**修改放大倍数
+                function modify_amplification(type){
+                    let param = {type: type, extend_id: relativeQuestion.id, question: question, matched_keywords: relativeQuestion.match_keywords};
+                    Util.post(`/mgbase/modify_amplification`, param).then(rst => $("#search_button").click());
+                }
+                //**奖励按钮
+                tr.find("button:eq(0)").click(() => modify_amplification(0));
+                //**惩罚按钮
+                tr.find("button:eq(1)").click(() => modify_amplification(1));
+
+                $("#list_knowledge_tbody").append(tr);
+            });
+        });
+    }
+</script>
+{% endblock %}
