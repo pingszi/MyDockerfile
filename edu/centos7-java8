@@ -1,0 +1,61 @@
+# 系统镜像CentOS7
+FROM daocloud.io/centos:latest
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# 环境变量
+ENV LANG en_US.UTF-8
+# 设置时区
+RUN ln -s -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+# 安装依赖
+RUN yum install -y wget net-tools gcc
+# 安装nginx依赖
+RUN yum install -y make zlib-devel pcre-devel
+
+# 安装JDK
+RUN mkdir -p /opt/java/jdk
+RUN wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie"  -P /opt/java/jdk http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.tar.gz
+RUN tar xzf /opt/java/jdk/jdk-8u181-linux-x64.tar.gz -C /opt/java/jdk && rm -rf /opt/java/jdk/jdk-8u181-linux-x64.tar.gz
+
+# 设置环境变量
+ENV JAVA_HOME /opt/java/jdk/jdk1.8.0_181
+ENV PATH $PATH:$JAVA_HOME/bin
+
+# 安装redis
+RUN mkdir -p /opt/java/redis
+RUN wget -P /opt/java/redis http://download.redis.io/releases/redis-4.0.9.tar.gz
+RUN tar xzf /opt/java/redis/redis-4.0.9.tar.gz -C /opt/java/redis && rm -rf /opt/java/redis/redis-4.0.9.tar.gz
+WORKDIR /opt/java/redis/redis-4.0.9
+RUN make
+# 配置
+RUN sed -i "s/# requirepass foobared/requirepass 123456/" /opt/java/redis/redis-4.0.9/redis.conf
+
+# 安装nginx
+#WORKDIR /etc/yum.repos.d
+#RUN echo "[nginx]" >> nginx.repo
+#RUN echo "name=nginx repo" >> nginx.repo
+#RUN echo "baseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/" >> nginx.repo
+#RUN echo "gpgcheck=0" >> nginx.repo
+#RUN echo "enabled=1" >> nginx.repo
+#RUN yum -y install nginx
+# 配置
+#WORKDIR /etc/nginx/conf.d
+#COPY edu.conf edu.conf
+#RUN rm -f default.conf
+# 不用使用nginx用户
+#RUN sed -i "s/user  nginx;/user  root;/" /etc/nginx/nginx.conf
+#RUN sed -i "s/worker_processes  1;/worker_processes  auto;/" /etc/nginx/nginx.conf 
+
+# 源码安装nginx和mp4模块
+RUN mkdir -p /opt/java/nginx
+RUN wget -P /opt/java/nginx http://nginx.org/download/nginx-1.14.1.tar.gz
+RUN tar xzf /opt/java/nginx/nginx-1.14.1.tar.gz -C /opt/java/nginx && rm -rf /opt/java/nginx/nginx-1.14.1.tar.gz
+WORKDIR /opt/java/nginx/nginx-1.14.1
+RUN ./configure --user=root --prefix=/opt/java/nginx --conf-path=/etc/nginx/nginx.conf --sbin-path=/usr/sbin/nginx --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --with-http_mp4_module && make install
+# 配置
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# 运行命令
+# docker build -t pings/centos7-java8 -f centos7-java8 .

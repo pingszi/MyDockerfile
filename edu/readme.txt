@@ -1,0 +1,11 @@
+项目：教育平台
+软件：
+centos7
+运行环境：
+jdk1.8-8u181
+tomcat8.5.8
+redis-4.0.9
+nginx
+项目目录:
+/opt/java/oms
+/opt/java/app

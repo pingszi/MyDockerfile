@@ -1,0 +1,17 @@
+# 系统镜像pings/centos7-java8
+FROM pings/centos7-java8
+
+# 部署edu项目
+COPY EduS-oms-0.0.1-SNAPSHOT.war /opt/java/oms/EduS-oms-0.0.1-SNAPSHOT.war
+COPY EduS-app-0.0.1-SNAPSHOT.war /opt/java/oms/EduS-app-0.0.1-SNAPSHOT.war
+COPY start_edu.sh /opt/java/oms/start_edu.sh
+
+# 开启8080端口
+EXPOSE 80 8087 8088
+
+# 启动tomcat服务器
+CMD bash /opt/java/oms/start_edu.sh
+
+# 运行命令
+# docker build -t pings/edu -f centos7-edu .
+# docker run -p 8087:8087 -p 8088:8088 -p 80:80 -v /opt/video/edu:/opt/video/app/upload --name edu pings/edu
