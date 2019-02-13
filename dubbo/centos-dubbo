@@ -1,0 +1,34 @@
+# 系统镜像zookeeper
+FROM docker.io/zookeeper:3.4.13
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# 环境变量
+ENV LANG en_US.UTF-8
+# 设置时区
+RUN ln -s -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+# 安装tomcat
+COPY apache-tomcat-8.5.8.tar.gz /opt/java/tomcat/apache-tomcat-8.5.8.tar.gz
+RUN tar xzf /opt/java/tomcat/apache-tomcat-8.5.8.tar.gz -C /opt/java/tomcat && rm -f /opt/java/tomcat/apache-tomcat-8.5.8.tar.gz
+# 配置(修改端口号为8085)
+RUN sed -i "s/<Connector port=\"8080\"/<Connector port=\"8085\"/" /opt/java/tomcat/apache-tomcat-8.5.8/conf/server.xml
+
+# 部署dubbo-admin
+COPY dubbo-admin-2.5.4-SNAPSHOT.war /opt/java/tomcat/apache-tomcat-8.5.8/webapps/
+
+# 开启端口
+EXPOSE 8085
+
+# 启动服务
+CMD ["zkServer.sh", "start-foreground"]
+
+# 运行命令
+# docker build -t pings/centos-dubbo -f centos-dubbo .
+# docker run -p 2181:2181 -p 8085:8085 --name dubbo pings/centos-dubbo
+# 需要进入容器手动启动tomcat
+# docker exec -it dubbo /bin/bash
+# /opt/java/tomcat/apache-tomcat-8.5.8/bin/catalina.sh run
+# http://192.168.1.233:8085/dubbo-admin-2.5.4-SNAPSHOT
+# dubbo-admin用户：root/root
