@@ -1,0 +1,9 @@
+项目：澳华材料预警系统(开发环境)
+软件：
+centos7
+git
+运行环境：
+python3.5.4
+django2.0.3
+项目目录:
+/opt/project/product/AplhaEWS

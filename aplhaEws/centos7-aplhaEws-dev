@@ -1,0 +1,17 @@
+# 系统镜像centos7-python3.5-aiqa
+FROM registry.cn-hangzhou.aliyuncs.com/pings/centos7-python3.5-aiqa
+
+# 维护者
+MAINTAINER Pings 275598139@qq.com
+
+# git
+RUN yum -y install git
+
+
+# 添加项目
+WORKDIR /opt/project/product
+RUN git clone https://github.com/pingszi/AplhaEWS.git
+
+# 启动
+WORKDIR /opt/project/product/AplhaEWS
+CMD python3 manage.py runserver 0.0.0.0:8005
