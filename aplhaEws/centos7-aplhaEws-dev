@@ -21,4 +21,4 @@ WORKDIR /opt/project/product/AplhaEWS
 CMD python3 manage.py runserver 0.0.0.0:8005
 
 # 运行命令
-# docker run -p 8085:8085 --net ping-sys --name AplhaEWS dder4353333
+# docker run -p 8005:8005 --net ping-sys --name AplhaEWS dder4353333
