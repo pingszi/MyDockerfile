@@ -22,4 +22,4 @@ CMD bash start_aiqa.sh
 
 # 编译运行
 # docker build -t pings/centos7-aiqa-pro -f /root/docker/pro/centos7-aiqa-pro /root/docker/pro/
-# docker run -e MYSQL_IP=192.168.1.123 -p 80:80 -p 8001:8001 --name aiqa pings/centos7-aiqa-pro
+# docker run -e MYSQL_IP=192.168.1.123 -p 80:80 -p 8001:8001 -v /root/aiqa/upload:/opt/project/product/AIQA/upload --name aiqa pings/centos7-aiqa-pro
